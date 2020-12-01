@@ -1,0 +1,21 @@
+[Card Readers]
+COM1=Auto
+COM2=Auto
+COM3=Auto
+COM4=Auto
+
+[Compiler]
+ExeFile=false
+ImageFile=false
+IncludePath=C:\Program Files (x86)\BasicCardV8\Inc;C:\Program Files (x86)\BasicCardV8\Lib
+ListingFile=false
+MapFile=false
+SourceFile=Term.bas
+
+[Terminal Program]
+ComPort=100
+SaveEEPROM=false
+
+[Window Options]
+IOToolTipEnabled=true
+ShowRegisters=Auto
