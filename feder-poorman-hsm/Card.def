@@ -8,4 +8,6 @@ Rem that ZeitControl GmbH has no warranty, obligations or liability
 Rem for any Sample Application Files.
 Rem ------------------------------------------------------------------
 
+Declare Command &H00 &H00 GRD_GETINFO(LC=0, data as string)
+
 

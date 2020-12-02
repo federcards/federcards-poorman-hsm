@@ -15,15 +15,42 @@ Option Explicit
 #include MISC.DEF
 #Include CARDUTIL.DEF
 
+
+
+
+
+
+const HEX_ALPHABET = "0123456789ABCDEF"
+
+function str2hex(ByVal strInput as String) as String
+    private i as integer
+    private c as byte
+    for i = 1 to len(strInput)
+        c = asc(strInput(i))
+        Str2Hex = Str2Hex + HEX_ALPHABET(1+(c/16)) + HEX_ALPHABET(1+(c mod 16))
+    next
+end function
+
+function _char2hex(byval c as string*1) as integer
+    private x as byte
+    x = asc(c)
+    if x >= 48 and x <= 57 then
+        _char2hex = x - 48      ' 0 - 9
+    else if x >= 65 and x <= 70 then
+        _char2hex = x - 65 + 10 ' A B C D E F
+    else if x >= 97 and x <= 102 then
+        _char2hex = x - 97 + 10 ' a b c d e f
+    else
+        _char2hex = -1
+    end if    
+end function
+
+
+
+
 '  Execution starts here
 
 
-public str as string*8
-
-Mid$(str, 1, 4) = Rnd as string*4
-'Mid$(str, 5, 4) as long = Rnd
-
-print str
 
 
 ' Wait for a card
@@ -33,11 +60,11 @@ ResetCard : Call CheckSW1SW2()
 
 ' Test Hello World command
 ' A String variable to hold the response
-'Public Data$
+Public Data$
 ' Call the command and check the status
-'Call HelloWorld(Data$) : Call CheckSW1SW2()
+Call GRD_GETINFO(Data$) : Call CheckSW1SW2()
 ' Output the result
-'print Data$
+print str2hex(Data$)
 
 ' Test to store some data
 ' Set the value to store

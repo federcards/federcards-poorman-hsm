@@ -33,7 +33,7 @@ END SUB
 '
 ' Returns information on card status.
 COMMAND &H00 &H00 GRD_GETINFO(LC=0, ret as STRING)
-    ret = "OK"
+    ret = HMAC_SHA1("OK", "OK")
 END COMMAND
 
 ' Command: GRD_PREAUTH
