@@ -1,0 +1,6 @@
+#include SHA.DEF
+#include AES.DEF
+
+
+#include hmac.bas
+#include crypto.bas

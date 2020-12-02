@@ -20,8 +20,8 @@ EEPROM VAR_GRD_SHAREDSECRET as string
 ' Initialize the session, generates a new RAND_CARD, and marks
 ' CARD_SESSION_INITIALIZED = 1. 
 SUB GRD_SESSION_INIT()
-    VAR_GRD_STATUS.RAND_CARD = random_bytes_max_128(16)	' Randomize
-    VAR_GRD_STATUS.SESSION_INITIALIZED = &HFF			' Mark as initialized
+    VAR_GRD_STATUS.RAND_CARD = crypto_random_bytes(16)  ' Randomize
+    VAR_GRD_STATUS.SESSION_INITIALIZED = &HFF           ' Mark as initialized
 END SUB
 
 
