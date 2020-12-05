@@ -9,5 +9,6 @@ Rem for any Sample Application Files.
 Rem ------------------------------------------------------------------
 
 Declare Command &H00 &H00 GRD_GETINFO(LC=0, data as string)
-
+Declare COMMAND &H00 &H02 GRD_PREAUTH(LC=0, ret as STRING)
+Declare COMMAND &H00 &H04 GRD_AUTH(data as STRING)
 

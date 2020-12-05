@@ -143,11 +143,11 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
     
     ' Validate hashcash in special nonce against session key. This prevents
     ' guessing the sharedsecret by increasing user's calculation effort.
-    IF GRD_HASHCASH_COUNT(special_nonce + buf_32) < 20 THEN
-        call GRD_SESSION_RESET()
-        data = "HASHCASH INSUFFICIENT"
-        EXIT COMMAND
-    END IF
+    'IF GRD_HASHCASH_COUNT(special_nonce + buf_32) < 20 THEN
+    '    call GRD_SESSION_RESET()
+    '    data = "HASHCASH INSUFFICIENT"
+    '    EXIT COMMAND
+    'END IF
     
     ' Validate session key
     IF strcmp_64(ShaHash(buf_32), sha1_session_key) = 0 THEN

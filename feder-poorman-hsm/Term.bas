@@ -9,6 +9,8 @@ Rem for any Sample Application Files.
 Rem ------------------------------------------------------------------
 Option Explicit
 
+#include AES.def
+#include SHA.def
 #include Card.def
 #Include COMMANDS.DEF
 #Include COMMERR.DEF
@@ -17,10 +19,6 @@ Option Explicit
 
 
 #include util.bas
-
-'print strcmp_253("", "a")
-'print strcmp_253("a", "a")
-'print strcmp_253("a", "b")
 
 
 
@@ -64,23 +62,70 @@ Call WaitForCard()
 ' Reset the card and check status code SW1SW2
 ResetCard : Call CheckSW1SW2()
 
-' Test Hello World command
-' A String variable to hold the response
 Public Data$
-' Call the command and check the status
-Call GRD_GETINFO(Data$) : Call CheckSW1SW2()
-' Output the result
-print str2hex(Data$)
 
-' Test to store some data
-' Set the value to store
-'Data$="I can keep this information"
-' Call the command to write data and check the status
-'Call WriteData(Data$) : Call CheckSW1SW2()
-' Just for test change value of Data$
-'Data$="You will not see this"
-' Call the command to read back data and check the status
-'Call ReadData(Data$) : Call CheckSW1SW2()
-' Ouput the data
-'print Data$
+
+
+
+
+
+Call GRD_GETINFO(Data$) : Call CheckSW1SW2()
+print "INFO", str2hex(Data$)
+
+
+
+
+public sharedsecret as string*32
+public challenge as string
+call GRD_PREAUTH(data$): call CheckSW1SW2()
+challenge = data$
+print "PREAUTH", str2hex(data$)
+challenge = AES(-256, sharedsecret, challenge)
+
+print "CHLNGE", str2hex(challenge)
+
+
+
+
+public user_rand as string*16 = "deadbeefDEADBEEF"
+public user_rand_encrypt_key as string*32
+public sha1_session_key as string*20
+public session_key as string*32
+
+user_rand_encrypt_key = ShaHash(challenge + sharedsecret)
+
+session_key = ShaHash(user_rand + challenge + sharedsecret)
+sha1_session_key = ShaHash(session_key)
+
+data$ = chr$(&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00) + AES(256, user_rand_encrypt_key, user_rand) + sha1_session_key
+
+
+call GRD_AUTH(data$) : call CheckSW1SW2()
+print "AUTH-RET", data$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
