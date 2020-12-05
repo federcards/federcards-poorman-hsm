@@ -12,6 +12,7 @@ Option Explicit
 #include Card.def
 
 
-#include crypto.card/index.def
+
 #include util.bas
+#include crypto.card/index.def
 #include guardian.bas

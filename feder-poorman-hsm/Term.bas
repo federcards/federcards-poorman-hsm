@@ -16,6 +16,12 @@ Option Explicit
 #Include CARDUTIL.DEF
 
 
+#include util.bas
+
+'print strcmp_253("", "a")
+'print strcmp_253("a", "a")
+'print strcmp_253("a", "b")
+
 
 
 

@@ -1,4 +1,4 @@
-const CRYPTO_HMAC_LENGTH = 10
+const CRYPTO_HMAC_LENGTH = 10       ' MUST BE LESS THAN 64
 const CRYPTO_IV_LENGTH = 15
 const CRYPTO_OVERHEAD = CRYPTO_HMAC_LENGTH + CRYPTO_IV_LENGTH
 
@@ -74,7 +74,7 @@ function crypto_decrypt(byref decrypt_key as string, byval message as string) as
     tag = Mid$(message, CRYPTO_IV_LENGTH+1, CRYPTO_HMAC_LENGTH)
     message = Mid$(message, CRYPTO_IV_LENGTH + CRYPTO_HMAC_LENGTH + 1)
     call crypto_ctr(decrypt_key, iv, message)
-    if Left$(HMAC_SHA1(decrypt_key, message), CRYPTO_HMAC_LENGTH) <> tag then
+    if strcmp_64(Left$(HMAC_SHA1(decrypt_key, message), CRYPTO_HMAC_LENGTH), tag) = 0 then
         crypto_decrypt = ""
         exit function
     end if

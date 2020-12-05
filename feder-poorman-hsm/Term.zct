@@ -1,3 +1,6 @@
+[Breakpoints]
+Breakpoint0=File(&quote;Z:/feder-poorman-hsm/feder-poorman-hsm/util.bas&quote;,13)
+
 [Card Readers]
 COM1=Auto
 COM2=Auto
@@ -12,10 +15,40 @@ ListingFile=false
 MapFile=false
 SourceFile=Term.bas
 
+[Console Window]
+Bottom=997
+Left=723
+Right=1383
+ShowCmd=1
+Top=655
+
+[FreeMem Window]
+Block0=&quote;=my,fAB7L,_jjgu_+=LR*{`;J;ng1.|J&gt;a=00}.rPbME^Sh&amp;a}P`G_M
+CRC=0x0776ef12
+Hex=false
+Length=46
+Visible=false
+
 [Terminal Program]
 ComPort=100
 SaveEEPROM=false
 
+[Window Geometry]
+Block0=&quote;=my,fAB7L,_kD`GM@ad6~^}wF90wsl#bc;k7YM|DJJW@WAwB2^x,~U]
+CRC=0xfc83aea9
+Length=46
+
 [Window Options]
 IOToolTipEnabled=true
 ShowRegisters=Auto
+
+[Window State]
+Block0=&quote;juy(J&amp;&amp;NwRR3wW/;svz\C|4m3W&apos;7vai-n~LS-:ygz#XC%$mX]H.D#0qU29GUUtDCywq
+Block1=DQ@J&gt;fF=OZgn/zNwEbn_j=XW[V:e-|pd6pZ,rM#gq&amp;(fLRPoLY}~~4ML/n.7iNK&lt;Q)A@;v{
+Block2=l&gt;r(#\}&gt;GWa,7p7L;&quote;=$@B&apos;@]e71-*m/Z}j_v:q~|NPly4m3N=vRWdGc1qA17d`ez%-!
+Block3=.=5&quote;6PM%6;~]mE5k7%$9v^sw|Y:)bY4|?A&apos;r_=M7W`(+_&amp;W7w=;^bViOBLMSa&lt;9{Nr#}d7
+Block4=%eIN\&apos;NY-_]P?Z(2yiqG[yE?rp5%yHbQmjp,|{z-)vJBp(x%c]qe&quote;MU*}rDIm,A`V5nq)y
+Block5=4X-Wc-QWJp?}I4^%6Hs`49^m,&lt;@;&amp;9of8s5Fa&apos;u.AB.Md&amp;=~4.o&lt;B`ICIhCwb5T#/A0^Gp
+Block6=!
+CRC=0xdc8cafa9
+Length=356
