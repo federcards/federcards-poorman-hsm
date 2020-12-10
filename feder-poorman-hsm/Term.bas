@@ -19,7 +19,7 @@ Option Explicit
 
 
 #include util.bas
-
+#include crypto.card/index.def
 
 
 
@@ -97,11 +97,31 @@ user_rand_encrypt_key = ShaHash(challenge + sharedsecret)
 session_key = ShaHash(user_rand + challenge + sharedsecret)
 sha1_session_key = ShaHash(session_key)
 
-data$ = chr$(&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00) + AES(256, user_rand_encrypt_key, user_rand) + sha1_session_key
+
+
+
+public hashcash as string*20
+public hashcash_sha1 as string*20
+public counter as long = 0
+
+
+do
+    hashcash = (counter as string)
+    hashcash_sha1 = ShaHash(hashcash + session_key)
+    counter = counter + 1
+loop until asc(hashcash_sha1(1))=0 and asc(hashcash_sha1(2))=0 and asc(hashcash_sha1(3))<16
+
+
+print "HASHCASH", str2hex(hashcash), str2hex(hashcash_sha1)
+
+
+
+data$ = hashcash + AES(256, user_rand_encrypt_key, user_rand) + sha1_session_key
 
 
 call GRD_AUTH(data$) : call CheckSW1SW2()
 print "AUTH-RET", data$
+print "AUTH-RET-H", str2hex(data$)
 
 
 

@@ -1,6 +1,16 @@
 ' Guardian Subsystem (GRD)
 ' ------------------------
-' Defines commands for basic 
+' Guardian Subsystem (GRD) is the subsystem implementing card message encryption
+' with user. This system replaces secure messaging functionality, which is not
+' always available on different cards.
+'
+' GRD starts with user authentication. The authentication is based on a
+' sharedsecret on card, which can be changed after a session is established.
+'
+' The session starts when authentication is finished successfully. The user and
+' the card establish agreement on a session key during this process. This key
+' will be used for all future communication with GRD or other subsystem.
+
 
 TYPE TYPE_GRD_STATUS
     SESSION_INITIALIZED as BYTE ' tells if RAND_CARD is present
@@ -18,11 +28,11 @@ PUBLIC VAR_GRD_STATUS as TYPE_GRD_STATUS = 0, "", "", "", 0
 
 ' The shared secret for secure messaging.
 EEPROM VAR_GRD_SHAREDSECRET as STRING*32
+CONST GRD_HASHCASH_REQUIREMENT = 20
 
 
 '###############################################################################
 ' Internal functions and subroutines
-
 
 
 ' Subroutine: GRD_SESSION_INIT
@@ -76,6 +86,31 @@ FUNCTION GRD_HASHCASH_COUNT(ByVal s as STRING) as BYTE
     NEXT
 END FUNCTION
 
+
+
+' Function GRD_DECRYPT
+' --------------------
+' Decrypt commands sent from user.
+FUNCTION GRD_DECRYPT(data as string) as STRING
+    IF VAR_GRD_STATUS.SESSION_ACTIVE <> &HFF OR Len(data) <= CRYPTO_OVERHEAD THEN
+        GRD_DECRYPT = ""
+        EXIT FUNCTION
+    END IF
+    GRD_DECRYPT = crypto_decrypt(VAR_GRD_STATUS.SESSION_KEY, data)
+END FUNCTION
+
+
+
+' Function GRD_ENCRYPT
+' --------------------
+' Encrypt data for replying user.
+FUNCTION GRD_ENCRYPT(data as string) as STRING
+    IF VAR_GRD_STATUS.SESSION_ACTIVE <> &HFF THEN
+        GRD_ENCRYPT = ""
+        EXIT FUNCTION
+    END IF
+    GRD_ENCRYPT = crypto_encrypt(VAR_GRD_STATUS.SESSION_KEY, data)
+END FUNCTION
 
 
 
@@ -143,11 +178,13 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
     
     ' Validate hashcash in special nonce against session key. This prevents
     ' guessing the sharedsecret by increasing user's calculation effort.
-    'IF GRD_HASHCASH_COUNT(special_nonce + buf_32) < 20 THEN
-    '    call GRD_SESSION_RESET()
-    '    data = "HASHCASH INSUFFICIENT"
-    '    EXIT COMMAND
-    'END IF
+    PRIVATE hashcash_count as BYTE
+    hashcash_count = GRD_HASHCASH_COUNT(special_nonce + buf_32)
+    IF hashcash_count < GRD_HASHCASH_REQUIREMENT THEN
+        call GRD_SESSION_RESET()
+        data = "HASHCASH INSUFFICIENT"
+        EXIT COMMAND
+    END IF
     
     ' Validate session key
     IF strcmp_64(ShaHash(buf_32), sha1_session_key) = 0 THEN
@@ -156,9 +193,10 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
         EXIT COMMAND
     END IF
     
+    ' Returns HMAC signed "OK" with session key.
     VAR_GRD_STATUS.SESSION_KEY = buf_32
     VAR_GRD_STATUS.SESSION_ACTIVE = &HFF
-    data = "OK"
+    data = HMAC_SHA1(VAR_GRD_STATUS.SESSION_KEY, "OK")
 END COMMAND
 
 
