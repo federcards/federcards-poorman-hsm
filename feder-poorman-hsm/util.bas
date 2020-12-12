@@ -42,3 +42,26 @@ FUNCTION strcmp_64(a as STRING, b as STRING) as BYTE
     __strcmp_64_b = __strcmp_64_a
 
 END FUNCTION
+
+
+FUNCTION resume_triplestr(s as STRING, length as BYTE) as STRING
+    PRIVATE i as BYTE
+    PRIVATE j as BYTE
+    PRIVATE k as BYTE
+    PRIVATE result as STRING*84
+    IF length > 84 THEN
+        resume_triplestr = ""
+        EXIT FUNCTION
+    END IF
+    j = length
+    k = length * 2
+    FOR i = 1 to length
+        j = j + 1
+        k = k + 1
+        result(i) = chr$((asc(s(i)) AND asc(s(j))) OR_
+            (asc(s(i)) AND asc(s(j))) OR (asc(s(i)) AND asc(s(j))))
+    NEXT
+    resume_triplestr = Left$(result, length)
+END FUNCTION
+
+

@@ -158,9 +158,30 @@ if lineinput = "y" or lineinput = "Y" then
     call GRD_UPDATE_SHAREDSECRET(data$)
     call CheckSW1SW2()
     print(data$)
-    
     Exit
 end if
+
+
+
+' 3 Try to unlock the card
+
+print "--- Now try to unlock the card ---"
+
+CONST LCK_DEFAULT_USERKEY = chr$(_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00)
+    
+CONST LCK_DEFAULT_USERKEY2 = chr$(_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H01)
+    
+data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY)
+call LCK_UNLOCK(data$) : call CheckSW1SW2()
+print crypto_decrypt(session_key, data$)
 
 
 
