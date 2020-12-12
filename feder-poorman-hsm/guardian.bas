@@ -138,8 +138,8 @@ END COMMAND
 
 
 
-'Command: GRD_AUTH
-'-----------------
+' Command: GRD_AUTH
+' -----------------
 ' Called when the user wants to authenticate itself with the card. The user
 ' supplies 3 parameters:
 '   +------------------------------------------------------------------+
@@ -200,6 +200,24 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
 END COMMAND
 
 
+
+' Command: GRD_UPDATE_SHAREDSECRET
+' --------------------------------
+' Changes the shared secret. This must be done when a session is established,
+' and the new secret MUST be 32 bytes.
+' Returns "OK" or "FAILED" in string. When the sharedsecret is changed
+' successfully, the current session is reset and the user must start it again.
+COMMAND &H00 &H06 GRD_UPDATE_SHAREDSECRET(data as STRING)
+    PRIVATE new_sharedsecret as STRING
+    new_sharedsecret = GRD_DECRYPT(data)
+    IF Len(new_sharedsecret) <> 32 THEN
+        data = "FAILED"
+        EXIT COMMAND
+    END IF
+    VAR_GRD_SHAREDSECRET = new_sharedsecret
+    CALL GRD_SESSION_RESET()
+    data = "OK"
+END COMMAND
 
 
 

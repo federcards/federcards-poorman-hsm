@@ -63,6 +63,7 @@ Call WaitForCard()
 ResetCard : Call CheckSW1SW2()
 
 Public Data$
+public lineinput as string
 
 
 
@@ -75,7 +76,21 @@ print "INFO", str2hex(Data$)
 
 
 
+' 1. Start authentication process
+
+' 1.1 Get preauth and challenge
+
 public sharedsecret as string*32
+
+
+print "Press Y to use the changed sharedsecret. Otherwise use default."
+Input lineinput
+
+if lineinput = "y" or lineinput = "Y"  then
+    sharedsecret = "0123456789abcdef0123456789abcdef"
+end if
+
+
 public challenge as string
 call GRD_PREAUTH(data$): call CheckSW1SW2()
 challenge = data$
@@ -84,8 +99,7 @@ challenge = AES(-256, sharedsecret, challenge)
 
 print "CHLNGE", str2hex(challenge)
 
-
-
+' 1.2 generates user random string and answer the challenge
 
 public user_rand as string*16 = "deadbeefDEADBEEF"
 public user_rand_encrypt_key as string*32
@@ -97,13 +111,12 @@ user_rand_encrypt_key = ShaHash(challenge + sharedsecret)
 session_key = ShaHash(user_rand + challenge + sharedsecret)
 sha1_session_key = ShaHash(session_key)
 
-
-
+' 1.2.1 Present the hashcash for this proposed session key.
 
 public hashcash as string*20
 public hashcash_sha1 as string*20
 public counter as long = 0
-
+public expected_ret as string
 
 do
     hashcash = (counter as string)
@@ -111,21 +124,43 @@ do
     counter = counter + 1
 loop until asc(hashcash_sha1(1))=0 and asc(hashcash_sha1(2))=0 and asc(hashcash_sha1(3))<16
 
-
 print "HASHCASH", str2hex(hashcash), str2hex(hashcash_sha1)
 
-
+' 1.3 Send the result and validate authentication process
 
 data$ = hashcash + AES(256, user_rand_encrypt_key, user_rand) + sha1_session_key
-
+expected_ret = HMAC_SHA1(session_key, "OK")
 
 call GRD_AUTH(data$) : call CheckSW1SW2()
 print "AUTH-RET", data$
 print "AUTH-RET-H", str2hex(data$)
+print "AUTH-EXPECT", str2hex(expected_ret)
+
+
+if expected_ret <> data$ then
+    print "Authentication failure. Exit now."
+    Exit
+end if
 
 
 
 
+
+' 2 Try to change the sharedsecret 
+
+print "Press Y to change the sharedsecret."
+Input lineinput
+
+if lineinput = "y" or lineinput = "Y" then
+    print "--- Now try to change the sharedsecret ---"
+    public new_sharedsecret as string*32 = "0123456789abcdef0123456789abcdef"
+    data$ = crypto_encrypt(session_key, new_sharedsecret)
+    call GRD_UPDATE_SHAREDSECRET(data$)
+    call CheckSW1SW2()
+    print(data$)
+    
+    Exit
+end if
 
 
 
