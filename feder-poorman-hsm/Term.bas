@@ -168,21 +168,38 @@ end if
 print "--- Now try to unlock the card ---"
 
 CONST LCK_DEFAULT_USERKEY = chr$(_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00)
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00)
     
 CONST LCK_DEFAULT_USERKEY2 = chr$(_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
-    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,&H01)
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&H00,_
+    &H00,&H00,&H00,&H00,&H00,&H00,&H00,&HFF)
     
-data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY)
+print "Press Y to use the changed password for auth"
+Input lineinput
+
+if lineinput = "y" or lineinput = "Y" then
+    data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY2)
+else
+    data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY)
+end if
+
 call LCK_UNLOCK(data$) : call CheckSW1SW2()
 print crypto_decrypt(session_key, data$)
 
+print "Press Y to change the password."
+Input lineinput
+if lineinput = "y" or lineinput = "Y" then
+    data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY2)
+    call LCK_CHANGE_KEY(data$) : call CheckSW1SW2()
+    print data$
+    print str2hex(data$)
+    print crypto_decrypt(session_key, data$)
+end if
 
 
 

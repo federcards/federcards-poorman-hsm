@@ -39,6 +39,37 @@ END FUNCTION
 
 
 
+' Subroutine: LCK_LOCKUP
+' -----------------------
+' Clear the memory and lock up this subsystem again.
+SUB LCK_LOCKUP()
+    __LCK_MAIN_STATUS.MAIN_SECRET_SHA1 = ""
+    __LCK_MAIN_STATUS.MAIN_SECRET = crypto_random32bytes()
+    __LCK_MAIN_STATUS.UNLOCKED = 0
+END SUB
+
+
+
+' Function: LCK_GET_KEY
+' ---------------------
+' Get a key for encrypting storage. This function can be only called when both
+' the LCK and GRD subsystem are unlocked, and integrity of memorised main key
+' can be validate. Returns "" otherwise.
+FUNCTION LCK_GET_KEY() as STRING
+    IF __LCK_MAIN_STATUS.UNLOCKED <> &HFF OR GRD_SESSION_ACTIVE() <> &HFF THEN
+        LCK_GET_KEY = ""
+        EXIT FUNCTION
+    END IF
+    IF &H00 = strcmp_64(_ 
+        __LCK_MAIN_STATUS.MAIN_SECRET_SHA1,_ 
+        ShaHash(__LCK_MAIN_STATUS.MAIN_SECRET)_ 
+    ) THEN
+        LCK_GET_KEY = ""
+        EXIT FUNCTION
+    END IF
+    LCK_GET_KEY = __LCK_MAIN_STATUS.MAIN_SECRET        
+END FUNCTION
+
 
 
 
@@ -69,8 +100,13 @@ END SUB
 ' Command: LCK_UNLOCK
 ' -------------------
 ' Unlocks the main encryption key using a user input.
-
 COMMAND &H02 &H00 LCK_UNLOCK(data as STRING)
+    ' If GRD subsystem not initialized: break
+    IF GRD_SESSION_ACTIVE() <> &HFF THEN
+        data = "UNAUTHORIZED"
+        EXIT COMMAND
+    END IF
+
     ' Do nothing if already unlocked
     IF __LCK_MAIN_STATUS.UNLOCKED = &HFF THEN
         data = GRD_ENCRYPT("OK")
@@ -109,4 +145,44 @@ END COMMAND
 
 
 
+' Command: LCK_LOCK
+' -------------------
+' Set the status to be locked.
+COMMAND &H02 &H02 LCK_LOCK(data as STRING)
+    ' If GRD subsystem not initialized: break
+    IF GRD_SESSION_ACTIVE() <> &HFF THEN
+        data = "UNAUTHORIZED"
+        EXIT COMMAND
+    END IF
+    call LCK_LOCKUP()
+    data = GRD_ENCRYPT("OK")
+END COMMAND
 
+
+
+' Command: LCK_CHANGE_KEY
+' -----------------------
+' Use the new user-supplied key to encrypt the main key.
+COMMAND &H02 &H04 LCK_CHANGE_KEY(data as string)
+    PRIVATE main_secret as STRING
+    main_secret = LCK_GET_KEY() ' a reliable main secret may be returned
+    IF Len(main_secret) <> 32 THEN
+        data = "UNAUTHORIZED OR INTEGRITY ERROR"
+        EXIT COMMAND
+    END IF
+    
+    PRIVATE user_key as STRING
+    user_key = GRD_DECRYPT(data)
+    IF Len(user_key) <> 32 THEN
+        data = GRD_ENCRYPT("FAILED")
+        EXIT COMMAND
+    END IF
+    
+    PRIVATE main_secret_encrypted as STRING
+    main_secret_encrypted = crypto_encrypt(user_key, main_secret)
+    LCK_MAIN_SECRET_ENCRYPTED = chr$(&HFF) +_
+        main_secret_encrypted + main_secret_encrypted + main_secret_encrypted    
+
+    call LCK_LOCKUP()
+    data = GRD_ENCRYPT("OK")
+END COMMAND

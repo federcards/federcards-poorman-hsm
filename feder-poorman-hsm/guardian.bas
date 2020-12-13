@@ -88,11 +88,18 @@ END FUNCTION
 
 
 
+' Function GRD_SESSION_ACTIVE
+FUNCTION GRD_SESSION_ACTIVE() as BYTE
+    GRD_SESSION_ACTIVE = VAR_GRD_STATUS.SESSION_ACTIVE
+END FUNCTION
+
+
+
 ' Function GRD_DECRYPT
 ' --------------------
 ' Decrypt commands sent from user.
 FUNCTION GRD_DECRYPT(data as string) as STRING
-    IF VAR_GRD_STATUS.SESSION_ACTIVE <> &HFF OR Len(data) <= CRYPTO_OVERHEAD THEN
+    IF GRD_SESSION_ACTIVE() <> &HFF OR Len(data) <= CRYPTO_OVERHEAD THEN
         GRD_DECRYPT = ""
         EXIT FUNCTION
     END IF
@@ -105,7 +112,7 @@ END FUNCTION
 ' --------------------
 ' Encrypt data for replying user.
 FUNCTION GRD_ENCRYPT(data as string) as STRING
-    IF VAR_GRD_STATUS.SESSION_ACTIVE <> &HFF THEN
+    IF GRD_SESSION_ACTIVE() <> &HFF THEN
         GRD_ENCRYPT = ""
         EXIT FUNCTION
     END IF
@@ -123,6 +130,7 @@ END FUNCTION
 ' Returns information on card status.
 COMMAND &H00 &H00 GRD_GETINFO(LC=0, ret as STRING)
     ret = Chr$(VAR_GRD_STATUS.SESSION_INITIALIZED)
+    ret = ret + Chr$(VAR_GRD_STATUS.SESSION_ACTIVE)
 END COMMAND
 
 
