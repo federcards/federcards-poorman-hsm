@@ -21,7 +21,7 @@ Option Explicit
 #include util.bas
 #include crypto.card/index.def
 
-
+public session_key as string*32
 
 
 const HEX_ALPHABET = "0123456789ABCDEF"
@@ -49,6 +49,31 @@ function _char2hex(byval c as string*1) as integer
     end if    
 end function
 
+function show_result(data as string) as string
+    private is_encrypted as byte
+    private status_code as byte
+    private payload as string
+    
+    is_encrypted = asc(data(1))
+    payload = Mid$(data, 2)
+    
+    if is_encrypted then
+        payload = crypto_decrypt(session_key, payload)
+    end if
+    status_code = asc(payload(1))
+    payload = Mid$(payload, 2)
+    
+    private ret as string
+    ret = ">>> "
+    if is_encrypted then
+        ret = ret + "[ENCRYPTED] "
+    end if
+    ret = ret + "StatusCode=0x" + str2hex(chr$(status_code)) + " "
+    ret = ret + str2hex(payload)
+    print ret
+
+    show_result = payload
+end function
 
 
 
@@ -104,12 +129,14 @@ print "CHLNGE", str2hex(challenge)
 public user_rand as string*16 = "deadbeefDEADBEEF"
 public user_rand_encrypt_key as string*32
 public sha1_session_key as string*20
-public session_key as string*32
+
 
 user_rand_encrypt_key = ShaHash(challenge + sharedsecret)
 
 session_key = ShaHash(user_rand + challenge + sharedsecret)
 sha1_session_key = ShaHash(session_key)
+
+
 
 ' 1.2.1 Present the hashcash for this proposed session key.
 
@@ -132,14 +159,11 @@ data$ = hashcash + AES(256, user_rand_encrypt_key, user_rand) + sha1_session_key
 expected_ret = HMAC_SHA1(session_key, "OK")
 
 call GRD_AUTH(data$) : call CheckSW1SW2()
-print "AUTH-RET", data$
-print "AUTH-RET-H", str2hex(data$)
-print "AUTH-EXPECT", str2hex(expected_ret)
-
-
-if expected_ret <> data$ then
+if expected_ret <> show_result(data$) then
     print "Authentication failure. Exit now."
     Exit
+else
+    print "Authentication ok."
 end if
 
 
@@ -157,7 +181,7 @@ if lineinput = "y" or lineinput = "Y" then
     data$ = crypto_encrypt(session_key, new_sharedsecret)
     call GRD_UPDATE_SHAREDSECRET(data$)
     call CheckSW1SW2()
-    print(data$)
+    show_result(data$)
     Exit
 end if
 
@@ -189,28 +213,28 @@ else
 end if
 
 call LCK_UNLOCK(data$) : call CheckSW1SW2()
-print crypto_decrypt(session_key, data$)
+show_result(data$)
 
 print "Press Y to change the password."
 Input lineinput
 if lineinput = "y" or lineinput = "Y" then
     data$ = crypto_encrypt(session_key, LCK_DEFAULT_USERKEY2)
     call LCK_CHANGE_KEY(data$) : call CheckSW1SW2()
-    print data$
-    print str2hex(data$)
-    print crypto_decrypt(session_key, data$)
+    show_result(data$)
 end if
 
 
 
+' 4 Test with HMAC slots
 
+print "---- Testing HMAC slots ----"
 
+data$ = chr$(&H01) + "test"
+data$ = crypto_encrypt(session_key, data$)
 
+call HMS_HASH(data$) : call CheckSW1SW2()
 
-
-
-
-
+call show_result(data$)
 
 
 

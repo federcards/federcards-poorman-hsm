@@ -103,26 +103,26 @@ END SUB
 COMMAND &H02 &H00 LCK_UNLOCK(data as STRING)
     ' If GRD subsystem not initialized: break
     IF GRD_SESSION_ACTIVE() <> &HFF THEN
-        data = "UNAUTHORIZED"
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
         EXIT COMMAND
     END IF
 
     ' Do nothing if already unlocked
     IF __LCK_MAIN_STATUS.UNLOCKED = &HFF THEN
-        data = GRD_ENCRYPT("OK")
+        data = GRD_RESPONSE(S_OK, "OK", GRD_OPTION_CREDENTIAL)
         EXIT COMMAND
     END IF
 
     IF &H00 = LCK_INITIALIZED() THEN
         call LCK_INITIALIZE()
-        data = GRD_ENCRYPT("OK, DEFAULT")
+        data = GRD_RESPONSE(S_OK, "OK, DEFAULT", GRD_OPTION_CREDENTIAL)
         EXIT COMMAND
     END IF
     
     PRIVATE decrypt_key as STRING
     decrypt_key = GRD_DECRYPT(data)
     IF decrypt_key = "" THEN
-        data = GRD_ENCRYPT("UNAUTHORIZED")
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
         EXIT COMMAND
     END IF
     
@@ -132,7 +132,7 @@ COMMAND &H02 &H00 LCK_UNLOCK(data as STRING)
     main_secret = crypto_decrypt(decrypt_key, main_secret)
     
     IF main_secret = "" THEN
-        data = GRD_ENCRYPT("FAILED")
+        data = GRD_RESPONSE(S_ERROR, "FAILED", GRD_OPTION_CREDENTIAL)
         call GRD_SESSION_RESET()
         EXIT COMMAND
     END IF
@@ -140,7 +140,7 @@ COMMAND &H02 &H00 LCK_UNLOCK(data as STRING)
     __LCK_MAIN_STATUS.MAIN_SECRET = main_secret
     __LCK_MAIN_STATUS.MAIN_SECRET_SHA1 = ShaHash(main_secret)
     __LCK_MAIN_STATUS.UNLOCKED = &HFF
-    data = GRD_ENCRYPT("OK")
+    data = GRD_RESPONSE(S_OK, "OK", GRD_OPTION_CREDENTIAL)
 END COMMAND
 
 
@@ -151,11 +151,11 @@ END COMMAND
 COMMAND &H02 &H02 LCK_LOCK(data as STRING)
     ' If GRD subsystem not initialized: break
     IF GRD_SESSION_ACTIVE() <> &HFF THEN
-        data = "UNAUTHORIZED"
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
         EXIT COMMAND
     END IF
     call LCK_LOCKUP()
-    data = GRD_ENCRYPT("OK")
+    data = GRD_RESPONSE(S_OK, "OK", 0)
 END COMMAND
 
 
@@ -167,14 +167,15 @@ COMMAND &H02 &H04 LCK_CHANGE_KEY(data as string)
     PRIVATE main_secret as STRING
     main_secret = LCK_GET_KEY() ' a reliable main secret may be returned
     IF Len(main_secret) <> 32 THEN
-        data = "UNAUTHORIZED OR INTEGRITY ERROR"
+        data = GRD_RESPONSE(S_ERROR,_
+            "UNAUTHORIZED OR INTEGRITY ERROR", GRD_OPTION_CREDENTIAL)
         EXIT COMMAND
     END IF
     
     PRIVATE user_key as STRING
     user_key = GRD_DECRYPT(data)
     IF Len(user_key) <> 32 THEN
-        data = GRD_ENCRYPT("FAILED")
+        data = GRD_RESPONSE(S_ERROR, "FAILED", GRD_OPTION_CREDENTIAL)
         EXIT COMMAND
     END IF
     
@@ -184,5 +185,5 @@ COMMAND &H02 &H04 LCK_CHANGE_KEY(data as string)
         main_secret_encrypted + main_secret_encrypted + main_secret_encrypted    
 
     call LCK_LOCKUP()
-    data = GRD_ENCRYPT("OK")
+    data = GRD_RESPONSE(S_OK, "OK", 0)
 END COMMAND

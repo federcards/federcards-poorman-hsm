@@ -12,8 +12,11 @@ Option Explicit
 #include Card.def
 
 
-
+#include status.bas
 #include util.bas
 #include crypto.card/index.def
 #include guardian.bas
 #include lock.bas
+
+
+#include apps.card/index.def

@@ -120,6 +120,36 @@ FUNCTION GRD_ENCRYPT(data as string) as STRING
 END FUNCTION
 
 
+' Function GRD_RESPONSE
+' ---------------------
+' An encapsuled version of GRD_ENCRYPT, with status indicating if the payload
+' is encrypted.
+'
+' The response is indicated to be plain if the first byte is 0x00, or encrypted
+' with 0xFF. The payload comes after this byte, with its first byte indicating
+' status code, and other data following up.
+' The response is encrypted whenever possible, e.g. when a session is active.
+' Otherwise, plaintext may be used as fallback. If options is set with
+' GRD_OPTION_CREDENTIAL, the response will not include actual data in case of
+' fallback, but status code is included.
+CONST GRD_OPTION_CREDENTIAL = &H01
+CONST GRD_STATUS_PLAIN = chr$(&H00)
+CONST GRD_STATUS_ENCRYPTED = chr$(&HFF)
+
+FUNCTION GRD_RESPONSE(status_code as byte, data as string, options as BYTE) as STRING
+    IF GRD_SESSION_ACTIVE() <> &HFF THEN
+        IF options AND GRD_OPTION_CREDENTIAL THEN
+            GRD_RESPONSE = GRD_STATUS_PLAIN + chr$(status_code)
+        ELSE
+            GRD_RESPONSE = GRD_STATUS_PLAIN + chr$(status_code) + data
+        END IF
+    ELSE
+        GRD_RESPONSE = GRD_STATUS_ENCRYPTED + _
+            GRD_ENCRYPT(chr$(status_code) + data)
+    END IF
+END FUNCTION
+
+
 
 '###############################################################################
 ' COMMANDS EXPOSED
@@ -164,7 +194,7 @@ END COMMAND
 ' * SHA1(Session Key) is validated against user input.
 COMMAND &H00 &H04 GRD_AUTH(data as STRING)
     IF Len(data) <> 56 THEN
-        data = "BAD REQUEST"
+        data = GRD_RESPONSE(S_ERROR, "BAD REQUEST", 0)
         EXIT COMMAND
     END IF
     
@@ -190,14 +220,14 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
     hashcash_count = GRD_HASHCASH_COUNT(special_nonce + buf_32)
     IF hashcash_count < GRD_HASHCASH_REQUIREMENT THEN
         call GRD_SESSION_RESET()
-        data = "HASHCASH INSUFFICIENT"
+        data = GRD_RESPONSE(S_ERROR, "HASHCASH INSUFFICIENT", 0)
         EXIT COMMAND
     END IF
     
     ' Validate session key
     IF strcmp_64(ShaHash(buf_32), sha1_session_key) = 0 THEN
         call GRD_SESSION_RESET()
-        data = "FAILED"
+        data = GRD_RESPONSE(S_ERROR, "SESSION KEY NEGOTIATION FAILED", 0)
         EXIT COMMAND
     END IF
     
@@ -205,6 +235,7 @@ COMMAND &H00 &H04 GRD_AUTH(data as STRING)
     VAR_GRD_STATUS.SESSION_KEY = buf_32
     VAR_GRD_STATUS.SESSION_ACTIVE = &HFF
     data = HMAC_SHA1(VAR_GRD_STATUS.SESSION_KEY, "OK")
+    data = GRD_RESPONSE(S_OK, data, GRD_OPTION_CREDENTIAL)
 END COMMAND
 
 
@@ -219,12 +250,12 @@ COMMAND &H00 &H06 GRD_UPDATE_SHAREDSECRET(data as STRING)
     PRIVATE new_sharedsecret as STRING
     new_sharedsecret = GRD_DECRYPT(data)
     IF Len(new_sharedsecret) <> 32 THEN
-        data = "FAILED"
+        data = GRD_RESPONSE(S_ERROR, "FAILED", 0)
         EXIT COMMAND
     END IF
     VAR_GRD_SHAREDSECRET = new_sharedsecret
     CALL GRD_SESSION_RESET()
-    data = "OK"
+    data = GRD_RESPONSE(S_OK, "OK", 0)
 END COMMAND
 
 
