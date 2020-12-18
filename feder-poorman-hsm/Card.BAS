@@ -9,6 +9,11 @@ Rem for any Sample Application Files.
 Rem ------------------------------------------------------------------
 Option Explicit
 
+
+#pragma ATR(HB="feder.cards/ph1")
+
+
+
 #include Card.def
 
 

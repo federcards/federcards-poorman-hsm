@@ -229,12 +229,32 @@ end if
 
 print "---- Testing HMAC slots ----"
 
+print "Test slot 0x01..."
 data$ = chr$(&H01) + "test"
 data$ = crypto_encrypt(session_key, data$)
-
 call HMS_HASH(data$) : call CheckSW1SW2()
-
 call show_result(data$)
+
+
+print "Test slot 0x08..."
+data$ = chr$(&H08) + "OK"
+data$ = crypto_encrypt(session_key, data$)
+call HMS_HASH(data$) : call CheckSW1SW2()
+call show_result(data$)
+
+
+print "Press Y to set a slot."
+Input lineinput
+if lineinput = "y" or lineinput = "Y" then
+    data$ = crypto_encrypt(session_key, chr$(&H08) + "key")
+    call HMS_SET_SLOT(data$) : call CheckSW1SW2()
+    expected_ret = HMAC_SHA1("key", "OK")
+    if expected_ret = show_result(data$) then
+        print("Expected result received.")
+    else
+        print("!! NOT EXPECTED RESULT.")
+    end if
+end if
 
 
 
