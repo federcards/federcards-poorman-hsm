@@ -20,5 +20,8 @@ Declare COMMAND &H02 &H04 LCK_CHANGE_KEY(data as string)
 
 
 
-Declare COMMAND &HF0 &H00 HMS_HASH(data as string)
-Declare COMMAND &HF0 &H02 HMS_SET_SLOT(data as string)
+Declare COMMAND &HF0 &H00 HMS_STAT(LC=0, data as string)
+Declare COMMAND &HF0 &H02 HMS_HASH(data as string)
+Declare COMMAND &HF0 &H04 HMS_SET_SLOT(data as string)
+Declare COMMAND &HF0 &H06 HMS_SLOT_LABEL_SET(data as string)
+Declare COMMAND &HF0 &H08 HMS_SLOT_LABEL_GET(data as string)

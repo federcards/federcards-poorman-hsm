@@ -41,9 +41,9 @@ Declare COMMAND &HF0 &H02 HMS_SET_SLOT(data as string)
 
 class CardResponse:
 
-    def __init__(self, decryptor, data):
-        self.encrypted = (data[0] == 0xFF) 
-        payload = data[1:]
+    def __init__(self, decryptor, raw_data, result_parser=None):
+        self.encrypted = (raw_data[0] == 0xFF) 
+        payload = raw_data[1:]
 
         if self.encrypted:
             try:
@@ -54,6 +54,8 @@ class CardResponse:
 
         self.statusCode = payload[0]
         self.payload = payload[1:]
+        self.result = \
+            result_parser(self, self.payload) if result_parser else None
 
     def __bytes__(self):
         return self.payload
@@ -87,7 +89,8 @@ class CardIO:
                 sw1, sw2, response = self._sendCommandRaw(CLA, INS, data)
                 return CardResponse(
                     self.session_decrypt,
-                    commandFunc(self, response)
+                    raw_data=response,
+                    result_parser=commandFunc
                 )
             return commandCaller
         return commandWrapper
@@ -122,7 +125,7 @@ class CardIO:
         return sw1, sw2, response
 
 
-    def __enter__(self, *args, **kvargs):
+    def waitForCard(self):
         self.cardService = self.cardRequest.waitforcard()
 
         self.cardService.connection.connect()
@@ -131,8 +134,11 @@ class CardIO:
 
         if identification != self.ATR:
             raise Exception("Wrong card inserted.")
+
+
+    def __enter__(self, *args, **kvargs):
+        self.waitForCard()
         return self
-            
 
     def __exit__(self, *args, **kvargs):
         pass
@@ -148,6 +154,9 @@ class CardIO:
             password,
             salt=self.ATR + b"/decryption",
             n=n, r=r, p=p, dklen=32, maxmem=2*n*r*65)
+
+    """Definitions of commands. Each command takes a preprocessed (e.g.
+    decrypted) input."""
 
     @command(0x00, 0x00)
     def GRD_GETINFO(self, data): return data
@@ -173,11 +182,29 @@ class CardIO:
 
 
     @command(0xF0, 0x00, I_ENCRYPTED)
-    def HMS_HASH(self, data): return data
+    def HMS_STAT(self, data):
+        ret = []
+        i = 0
+        for b in data:
+            ret.append({
+                "id":        i,
+                "immutable": bool(b & 0x80),
+                "used":      bool(b & 0x01),
+            })
+            i += 1
+        return ret 
 
     @command(0xF0, 0x02, I_ENCRYPTED)
+    def HMS_HASH(self, data): return data
+
+    @command(0xF0, 0x04, I_ENCRYPTED)
     def HMS_SET_SLOT(self, data): return data
 
+    @command(0xF0, 0x06, I_ENCRYPTED)
+    def HMS_SLOT_LABEL_SET(self, data): return data
+
+    @command(0xF0, 0x08, I_ENCRYPTED)
+    def HMS_SLOT_LABEL_GET(self, data): return data
 
 
     def authenticate(self, sharedsecret=None):

@@ -15,8 +15,11 @@
 
 CONST HMS_IMMUTABLE_SLOTS = 8
 CONST HMS_SLOTS_TOTAL = 32
-EEPROM HMS_SECRETS_ENCRYPTED(HMS_SLOTS_TOTAL) as STRING
+CONST HMS_STAT_SLOTIMMUTABLE = &H80
+CONST HMS_STAT_SLOTUSED = &H01
 
+EEPROM HMS_SECRETS_ENCRYPTED(HMS_SLOTS_TOTAL) as STRING
+EEPROM HMS_LABELS(HMS_SLOTS_TOTAL) as STRING
 
 SUB HMS_SET_VALUE(id AS BYTE, k as STRING, secret as STRING)
     HMS_SECRETS_ENCRYPTED(id) = crypto_encrypt(k, secret)
@@ -28,11 +31,39 @@ END FUNCTION
 
 
 
+' Command: HMS_STAT
+' -----------------
+COMMAND &HF0 &H00 HMS_STAT(LC=0, data as string)
+    IF GRD_SESSION_ACTIVE() = &H00 THEN
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
+        EXIT COMMAND
+    END IF
+    
+    data = ""
+    
+    PRIVATE i as BYTE
+    PRIVATE r as BYTE
+    FOR i = 0 TO HMS_SLOTS_TOTAL - 1
+        r = 0
+        IF HMS_SECRETS_ENCRYPTED(i) <> "" THEN
+            r = r OR HMS_STAT_SLOTUSED
+        END IF
+        IF i < HMS_IMMUTABLE_SLOTS THEN
+            r = r OR HMS_STAT_SLOTIMMUTABLE
+        END IF
+        data = data + chr$(r)
+    NEXT
+    
+    data = GRD_RESPONSE(S_OK, data, GRD_OPTION_CREDENTIAL)
+END COMMAND
+
+
+
 ' Command: HMS_HASH
 ' -----------------
 ' Input is a string. The first byte is the index of slot want to use. The rest
 ' are data to be calculated with HMAC.
-COMMAND &HF0 &H00 HMS_HASH(data as string)
+COMMAND &HF0 &H02 HMS_HASH(data as string)
     PRIVATE data_decrypted as STRING
     data_decrypted = GRD_DECRYPT(data)
     
@@ -79,7 +110,7 @@ END COMMAND
 ' ---------------------
 ' Set the secret for a given slot. First byte of input being the slot wanted to
 ' set, the rest being the secret. Slot id must be >= 8 and <= 31.
-COMMAND &HF0 &H02 HMS_SET_SLOT(data as string)
+COMMAND &HF0 &H04 HMS_SET_SLOT(data as string)
     PRIVATE data_decrypted as STRING
     data_decrypted = GRD_DECRYPT(data)
     IF data_decrypted = "" THEN
@@ -109,5 +140,41 @@ COMMAND &HF0 &H02 HMS_SET_SLOT(data as string)
         GRD_OPTION_CREDENTIAL)
 END COMMAND
 
+
+
+' Command: HMS_SLOT_LABEL_SET
+' -----------------------
+' Label the given slot with some text. Note: this does not require unlocking.
+COMMAND &HF0 &H06 HMS_SLOT_LABEL_SET(data as string)
+    PRIVATE data_decrypted as STRING
+    data_decrypted = GRD_DECRYPT(data)
+    IF data_decrypted = "" THEN
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
+        EXIT COMMAND
+    END IF
+    
+    PRIVATE slot_index as BYTE
+    slot_index = asc(data_decrypted(1)) mod HMS_SLOTS_TOTAL
+    HMS_LABELS(slot_index) = Mid$(data_decrypted, 2)
+
+    data = GRD_RESPONSE(S_OK, "OK", GRD_OPTION_CREDENTIAL)
+END COMMAND
+
+
+
+' Command: HMS_SLOT_LABEL_GET
+' ---------------------------
+COMMAND &HF0 &H08 HMS_SLOT_LABEL_GET(data as string)
+    PRIVATE data_decrypted as STRING
+    data_decrypted = GRD_DECRYPT(data)
+    IF data_decrypted = "" THEN
+        data = GRD_RESPONSE(S_ERROR, "UNAUTHORIZED", 0)
+        EXIT COMMAND
+    END IF
+    
+    PRIVATE slot_index as BYTE
+    slot_index = asc(data_decrypted(1)) mod HMS_SLOTS_TOTAL
+    data = GRD_RESPONSE(S_OK, HMS_LABELS(slot_index), GRD_OPTION_CREDENTIAL)
+END COMMAND
 
 
