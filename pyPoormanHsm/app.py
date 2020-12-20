@@ -6,7 +6,7 @@ import sys
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox as msgbox
 
 from .cardio import *
 from .ui import *
@@ -104,14 +104,18 @@ class SessionManager:
             return
         if self.card_io.authenticate(password.encode("ascii") or None):
             self.change_status(session_started=True)
+            return True
+        return False
 
     def unlock(self, password):
         if not self.card_io:
             return
         if self.card_io.unlock(password.encode("ascii") or None):
             self.change_status(unlocked=True)
+            return True
         else:
             self.change_status(unlocked=False, session_started=False)
+            return False
 
     def call_hmac_slot(self, slot_id, data):
         return self.card_io.HMS_HASH(bytes([slot_id]) + data)

@@ -2,6 +2,8 @@
 
 import time
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QMessageBox as msgbox
+
 from .load_ui import GenericQt5Window, GenericQt5Dialog
 
 
@@ -56,6 +58,12 @@ class TOTPDisplay(GenericQt5Dialog):
                 self.display_seed = bytes(self.display_seed)
                 self.display_timeslice = timeslice
             except:
+                msgbox.critical(
+                    self, 
+                    "Slot Not Initialized",
+                    "This slot has not been initialized. Please set a secret first."
+                )
+                self.accept()
                 return
 
         p = (self.display_digits, self.display_seed)
