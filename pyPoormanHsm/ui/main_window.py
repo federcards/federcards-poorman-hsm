@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 from .load_ui import GenericQt5Window, GenericQt5Dialog
 from .pinentry import PINEntry
+from .totp_display import TOTPDisplay
 
 
 
 class MainWindow(GenericQt5Window):
 
     def __init__(self, app):
+        self.totp_display = TOTPDisplay()
         self.pinentry_session_start = PINEntry()
         self.pinentry_unlock = PINEntry()
         self.app = app
@@ -38,8 +40,10 @@ class MainWindow(GenericQt5Window):
     # HMAC slots buttons
     @GenericQt5Window.signal("btnCalcHMACTOTP", "clicked")
     def on_btnCalcHMACTOTP_clicked(self, *args, **kvargs):
+        print("**")
         selected = self.viewHMACSlots.selectedIndexes()
         if len(selected) < 1: return # TODO error
         slot_id = selected[0].row()
-        print(slot_id)
-        self.app.session_manager.call_hmac_slot(slot_id, b"test")
+        print("***")
+        self.totp_display.show(
+            lambda d: self.app.session_manager.call_hmac_slot(slot_id, d))

@@ -114,7 +114,7 @@ class SessionManager:
             self.change_status(unlocked=False, session_started=False)
 
     def call_hmac_slot(self, slot_id, data):
-        print(self.card_io.HMS_HASH(bytes([slot_id]) + data))
+        return self.card_io.HMS_HASH(bytes([slot_id]) + data)
 
 
 

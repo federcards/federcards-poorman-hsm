@@ -28,10 +28,13 @@ class WindowSignaling:
     def bind_signals(self):
         for name in dir(self):
             signal_callback = getattr(self, name)
-            if not isinstance(signal_callback, self.SignalCallback): continue
-
+            if not isinstance(signal_callback, WindowSignaling.SignalCallback): continue
+            
             def bind(signal_callback):
-                target = getattr(self, signal_callback.target)
+                if signal_callback.target != None:
+                    target = getattr(self, signal_callback.target)
+                else:
+                    target = self
                 target_signal = getattr(target, signal_callback.signal)
                 target_signal.connect(
                     lambda *args, **kvargs:\
