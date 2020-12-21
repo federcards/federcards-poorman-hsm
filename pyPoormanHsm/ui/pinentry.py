@@ -5,6 +5,6 @@ class PINEntry(GenericQt5Dialog):
     def __init__(self):
         GenericQt5Dialog.__init__(self, "pinentry")
 
-    @GenericQt5Dialog.signal(None, "finished")
-    def on_finished(self, *args, **kvargs):
+    def show(self, *args, **kvargs):
         self.password.setText("")
+        GenericQt5Dialog.show(self)

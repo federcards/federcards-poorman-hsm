@@ -117,6 +117,14 @@ class SessionManager:
             self.change_status(unlocked=False, session_started=False)
             return False
 
+    def change_session_sharedsecret(self, password):
+        return self.card_io.changeSharedsecret(
+            password.encode("ascii") or None).statusCode == 0
+
+    def change_locking_password(self, password):
+        return self.card_io.changeUnlockKey(
+            password.encode("ascii") or None).statusCode == 0
+
     def call_hmac_slot(self, slot_id, data):
         return self.card_io.HMS_HASH(bytes([slot_id]) + data)
 
